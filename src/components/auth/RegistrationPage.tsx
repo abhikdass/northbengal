@@ -68,7 +68,7 @@ const RegistrationPage = () => {
         <div className="text-center mb-8">
           <Link to="/" className="inline-block">
             <img
-              src="/vite.svg"
+              src="/logo.svg"
               alt="North Bengal Travel Guide"
               className="h-12 w-12 mx-auto"
             />

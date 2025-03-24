@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import Navbar from "@/components/layout/Navbar";
 import {
   Form,
   FormControl,
@@ -49,13 +50,13 @@ const LoginPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-block">
+            <Link to="/" className="inline-block">
             <img
-              src="/vite.svg"
+              src="/logo.svg"
               alt="North Bengal Travel Guide"
-              className="h-12 w-12 mx-auto"
+              className="h-8 w-auto mr-2"
             />
-          </Link>
+            </Link>
           <h1 className="mt-4 text-3xl font-bold text-gray-900">
             Welcome Back
           </h1>

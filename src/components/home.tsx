@@ -1,7 +1,18 @@
 import DashboardHero from "./dashboard/DashboardHero";
 import FeatureCards from "./dashboard/FeatureCards";
 import { useNavigate } from "react-router-dom";
+// import { useState } from "react";
+// import EmergencyPanel from "./emergency/emergencyPanel";
+// const [emergencyPanelExpanded, setEmergencyPanelExpanded] = useState(false);
+// const handleEmergencyCall = (serviceType: string) => {
+//   console.log(`Emergency call to ${serviceType}`);
+//   // In a real app, this would initiate a call or show contact information
+// };
 
+// const handleShareLocation = () => {
+//   console.log("Sharing location");
+//   // In a real app, this would share the user's location
+// };
 function Home() {
   const navigate = useNavigate();
 
@@ -24,12 +35,48 @@ function Home() {
     }
   };
 
+  const getAboutSections = () => {
+    return [
+      {
+        title: "Popular Destinations",
+        items: [
+          "Darjeeling - Famous for its tea gardens and mountain views",
+          "Kalimpong - Known for its cultural heritage and monasteries",
+          "Dooars - Home to diverse wildlife and lush forests",
+          "Siliguri - The gateway city to North Bengal",
+        ],
+        bgColor: "bg-blue-50",
+      },
+      {
+        title: "Best Time to Visit",
+        items: [
+          "March to May - Spring season with pleasant weather",
+          "September to November - Post-monsoon with clear skies",
+          "December to February - Winter with occasional snowfall",
+          "Avoid June to August - Heavy monsoon season",
+        ],
+        bgColor: "bg-green-50",
+      },
+      {
+        title: "Best Time to Visit",
+        items: [
+          "March to May - Spring season with pleasant weather",
+          "September to November - Post-monsoon with clear skies",
+          "December to February - Winter with occasional snowfall",
+          "Avoid June to August - Heavy monsoon season",
+        ],
+        bgColor: "bg-red-50",
+      },
+    ];
+  };
+
   return (
     <div className="space-y-8 pb-10">
       <DashboardHero
         welcomeMessage="Welcome to North Bengal Travel Guide"
         backgroundImage="https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=1400&q=80"
       />
+
       <FeatureCards onFeatureClick={handleFeatureClick} />
 
       <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -43,31 +90,21 @@ function Home() {
           intuitive interface with AI-powered assistance.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-lg mb-2">Popular Destinations</h3>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>
-                Darjeeling - Famous for its tea gardens and mountain views
-              </li>
-              <li>
-                Kalimpong - Known for its cultural heritage and monasteries
-              </li>
-              <li>Dooars - Home to diverse wildlife and lush forests</li>
-              <li>Siliguri - The gateway city to North Bengal</li>
-            </ul>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-lg mb-2">Best Time to Visit</h3>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>March to May - Spring season with pleasant weather</li>
-              <li>September to November - Post-monsoon with clear skies</li>
-              <li>December to February - Winter with occasional snowfall</li>
-              <li>Avoid June to August - Heavy monsoon season</li>
-            </ul>
-          </div>
+          {getAboutSections().map((section, index) => (
+            <div key={index} className={`${section.bgColor} p-4 rounded-lg`}>
+              <h3 className="font-semibold text-lg mb-2">{section.title}</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                {section.items.map((item, idx) => (
+                  <li key={idx}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
+
     </div>
+    
   );
 }
 

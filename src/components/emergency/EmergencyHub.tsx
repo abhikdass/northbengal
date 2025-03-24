@@ -18,7 +18,6 @@ import {
   Users,
   Heart,
 } from "lucide-react";
-
 interface EmergencyContact {
   id: string;
   name: string;

@@ -45,26 +45,14 @@ const Navbar = ({ className }: NavbarProps = {}) => {
         <div className="flex items-center">
           <Link to="/" className="flex items-center">
             <img
-              src="/vite.svg"
+              src="/logo.svg"
               alt="North Bengal Travel Guide"
-              className="h-8 w-8 mr-2"
+              className="h-20 w-14 mr-4"
             />
             <span className="font-bold text-lg hidden md:block">
               North Bengal Travel
             </span>
           </Link>
-        </div>
-
-        {/* Search Bar - Hidden on Mobile */}
-        <div className="hidden md:flex items-center max-w-md w-full mx-4">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              type="text"
-              placeholder="Search destinations, attractions..."
-              className="pl-10 w-full rounded-full bg-gray-50 border-gray-200"
-            />
-          </div>
         </div>
 
         {/* Desktop Navigation Links */}

@@ -11,11 +11,12 @@ import LoginPage from "./components/auth/LoginPage";
 import RegistrationPage from "./components/auth/RegistrationPage";
 import InsightDetailsPage from "./components/insights/InsightDetailsPage";
 import SaveItineraryPage from "./components/itinerary/SaveItineraryPage";
-
+import EmergencyPanel from "./components/emergency/emergencyPanel";
 function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
+        <EmergencyPanel />
       <div className="pt-[70px] container mx-auto p-4">{children}</div>
     </div>
   );
@@ -23,6 +24,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
+
     <Suspense
       fallback={
         <div className="flex items-center justify-center h-screen">
@@ -94,6 +96,7 @@ function App() {
         {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
       </>
     </Suspense>
+   
   );
 }
 

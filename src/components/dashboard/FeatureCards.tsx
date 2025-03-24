@@ -65,7 +65,7 @@ const FeatureCards = ({ onFeatureClick = () => {} }: FeatureCardsProps) => {
       icon: <Calendar className="h-5 w-5 text-green-500" />,
       title: "Itinerary Planner",
       description:
-        "Create personalized travel plans based on your preferences, budget, and interests.",
+        "Create personalized travel plans based on your preferences, budget, and interests. Share with friends!",
       color: "bg-green-50 hover:bg-green-100 border-green-200",
     },
     {

@@ -58,40 +58,38 @@ const LocationMarker = () => {
 const InteractiveMap: React.FC<InteractiveMapProps> = ({
   initialCenter = [27.038, 88.2627], // Darjeeling coordinates
   initialZoom = 12,
-  locations = [
-    {
-      id: "1",
-      name: "Tiger Hill",
-      type: "attraction",
-      position: [27.0072, 88.2631],
-      description: "Famous for sunrise views of the Kanchenjunga range.",
-    },
-    {
-      id: "2",
-      name: "Mayfair Darjeeling",
-      type: "accommodation",
-      position: [27.0362, 88.2632],
-      description: "Luxury hotel with colonial charm and mountain views.",
-    },
-    {
-      id: "3",
-      name: "Glenary's",
-      type: "food",
-      position: [27.0385, 88.2627],
-      description: "Popular bakery and restaurant serving continental cuisine.",
-    },
-    {
-      id: "4",
-      name: "District Hospital",
-      type: "emergency",
-      position: [27.0423, 88.2667],
-      description: "Main medical facility in Darjeeling.",
-    },
-  ],
 }) => {
+  const [locations, setLocations] = useState<Location[]>([]);
   const [activeLocation, setActiveLocation] = useState<Location | null>(null);
   const [mapFilter, setMapFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/api/mapDetails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ lat: "27.0385", lon: "88.2627" }),
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch locations");
+
+        const data = await response.json();
+        setLocations(data);
+        setLoading(false);
+      } catch (err: any) {
+        setError(err.message || "Unknown error");
+        setLoading(false);
+      }
+    };
+
+    fetchLocations();
+  }, []);
 
   const getMarkerColor = (type: Location["type"]) => {
     switch (type) {
@@ -165,24 +163,25 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             <LocationMarker />
-            {filteredLocations.map((location) => (
-              <Marker
-                key={location.id}
-                position={location.position}
-                eventHandlers={{
-                  click: () => {
-                    setActiveLocation(location);
-                  },
-                }}
-              >
-                <Popup>
-                  <div>
-                    <h3 className="font-bold">{location.name}</h3>
-                    <p>{location.description}</p>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
+            {!loading &&
+              filteredLocations.map((location) => (
+                <Marker
+                  key={location.id}
+                  position={location.position}
+                  eventHandlers={{
+                    click: () => {
+                      setActiveLocation(location);
+                    },
+                  }}
+                >
+                  <Popup>
+                    <div>
+                      <h3 className="font-bold">{location.name}</h3>
+                      <p>{location.description}</p>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
           </MapContainer>
         </div>
 
@@ -198,36 +197,40 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
             </Button>
           </div>
 
-          <div className="space-y-3">
-            {filteredLocations.length > 0 ? (
-              filteredLocations.map((location) => (
-                <Card
-                  key={location.id}
-                  className={`cursor-pointer transition-all ${activeLocation?.id === location.id ? "ring-2 ring-primary" : ""}`}
-                  onClick={() => setActiveLocation(location)}
-                >
-                  <CardHeader className="p-3 pb-0">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <MapPin
-                        className={`h-4 w-4 text-${getMarkerColor(location.type) === "blue" ? "blue" : getMarkerColor(location.type) === "green" ? "green" : getMarkerColor(location.type) === "orange" ? "orange" : "red"}-500`}
-                      />
-                      {location.name}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-1">
-                    <p className="text-xs text-gray-500">
-                      {location.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No locations found</p>
-              </div>
-            )}
-          </div>
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">Loading...</div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-500">{error}</div>
+          ) : filteredLocations.length > 0 ? (
+            filteredLocations.map((location) => (
+              <Card
+                key={location.id}
+                className={`cursor-pointer transition-all ${
+                  activeLocation?.id === location.id ? "ring-2 ring-primary" : ""
+                }`}
+                onClick={() => setActiveLocation(location)}
+              >
+                <CardHeader className="p-3 pb-0">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <MapPin
+                      className={`h-4 w-4 text-${getMarkerColor(location.type)}-500`}
+                    />
+                    {location.name}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-1">
+                  <p className="text-xs text-gray-500">
+                    {location.description}
+                  </p>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>No locations found</p>
+            </div>
+          )}
 
           {activeLocation && (
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
@@ -267,5 +270,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     </div>
   );
 };
+
 
 export default InteractiveMap;

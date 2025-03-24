@@ -1,6 +1,3 @@
-import React from "react";
-import { Button } from "../ui/button";
-import { MapPin, Calendar, Shield, Info } from "lucide-react";
 
 interface DashboardHeroProps {
   welcomeMessage?: string;
@@ -30,25 +27,7 @@ const DashboardHero = ({
           interactive maps, and local insights.
         </p>
 
-        {/* Quick Action Buttons */}
-        <div className="flex flex-wrap justify-center gap-4 mt-2">
-          <Button className="bg-emerald-600 hover:bg-emerald-700 flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Create Itinerary
-          </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            View Map
-          </Button>
-          <Button className="bg-red-600 hover:bg-red-700 flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Emergency Support
-          </Button>
-          <Button className="bg-amber-600 hover:bg-amber-700 flex items-center gap-2">
-            <Info className="h-4 w-4" />
-            Local Insights
-          </Button>
-        </div>
+        
       </div>
     </div>
   );
