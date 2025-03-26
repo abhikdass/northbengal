@@ -6,6 +6,7 @@ import Navbar from "./components/layout/Navbar";
 import InteractiveMap from "./components/map/InteractiveMap";
 import ItineraryPlanner from "./components/itinerary/ItineraryPlanner";
 import EmergencyHub from "./components/emergency/EmergencyHub";
+import EmergencyPanel from "./components/emergency/EmergencyPanel";
 import LocalInsights from "./components/insights/LocalInsights";
 import LoginPage from "./components/auth/LoginPage";
 import RegistrationPage from "./components/auth/RegistrationPage";
@@ -31,6 +32,7 @@ function App() {
       }
     >
       <>
+        <EmergencyPanel />
         <Routes>
           <Route
             path="/"

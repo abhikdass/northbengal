@@ -9,6 +9,7 @@ import {
 import { MapPin, Calendar, Shield, Compass } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
+import AIManager from "./AIManager";
 
 interface FeatureCardProps {
   icon: React.ReactNode;
@@ -88,7 +89,9 @@ const FeatureCards = ({ onFeatureClick = () => {} }: FeatureCardsProps) => {
 
   return (
     <div className="w-full bg-white p-6">
-      <h2 className="mb-6 text-2xl font-bold">Explore Features</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Explore Features</h2>
+      </div>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {features.map((feature) => (
           <FeatureCard

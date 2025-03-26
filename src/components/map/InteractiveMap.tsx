@@ -14,11 +14,28 @@ const iconUrl = "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png";
 const shadowUrl =
   "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png";
 
+// Create custom icons for different location types
+const createCustomIcon = (color: string) => {
+  return L.divIcon({
+    className: `custom-marker-${color}`,
+    html: `<div style="background-color: ${color}; width: 24px; height: 24px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 24],
+    popupAnchor: [0, -24],
+  });
+};
+
+const attractionIcon = createCustomIcon("#3b82f6"); // blue
+const accommodationIcon = createCustomIcon("#22c55e"); // green
+const foodIcon = createCustomIcon("#f97316"); // orange
+const emergencyIcon = createCustomIcon("#ef4444"); // red
+
 let DefaultIcon = L.icon({
   iconUrl: iconUrl,
   shadowUrl: shadowUrl,
   iconSize: [25, 41],
   iconAnchor: [12, 41],
+  popupAnchor: [0, -41], // Position popup above the marker
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
@@ -50,7 +67,12 @@ const LocationMarker = () => {
 
   return position === null ? null : (
     <Marker position={position}>
-      <Popup>You are here</Popup>
+      <Popup>
+        <div className="p-1">
+          <h3 className="font-bold">Your Location</h3>
+          <p>You are here</p>
+        </div>
+      </Popup>
     </Marker>
   );
 };
@@ -58,7 +80,9 @@ const LocationMarker = () => {
 const InteractiveMap: React.FC<InteractiveMapProps> = ({
   initialCenter = [27.038, 88.2627], // Darjeeling coordinates
   initialZoom = 12,
-  locations = [
+  locations: propLocations = [],
+}) => {
+  const [locations, setLocations] = useState<Location[]>([
     {
       id: "1",
       name: "Tiger Hill",
@@ -87,8 +111,48 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       position: [27.0423, 88.2667],
       description: "Main medical facility in Darjeeling.",
     },
-  ],
-}) => {
+  ]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch locations from API
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const response = await fetch(
+          "https://api.northbengaltravel.com/api/locations",
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            },
+          },
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Fetched locations from API:", data);
+          setLocations(data);
+        } else {
+          console.warn(
+            "Failed to fetch locations from API, using default locations",
+          );
+          // If prop locations were provided, use those instead of the defaults
+          if (propLocations.length > 0) {
+            setLocations(propLocations);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching locations:", error);
+        // If prop locations were provided, use those instead of the defaults
+        if (propLocations.length > 0) {
+          setLocations(propLocations);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLocations();
+  }, [propLocations]);
   const [activeLocation, setActiveLocation] = useState<Location | null>(null);
   const [mapFilter, setMapFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -105,6 +169,21 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         return "red";
       default:
         return "blue";
+    }
+  };
+
+  const getMarkerIcon = (type: Location["type"]) => {
+    switch (type) {
+      case "attraction":
+        return attractionIcon;
+      case "accommodation":
+        return accommodationIcon;
+      case "food":
+        return foodIcon;
+      case "emergency":
+        return emergencyIcon;
+      default:
+        return attractionIcon;
     }
   };
 
@@ -169,6 +248,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
               <Marker
                 key={location.id}
                 position={location.position}
+                icon={getMarkerIcon(location.type)}
                 eventHandlers={{
                   click: () => {
                     setActiveLocation(location);
@@ -176,7 +256,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 }}
               >
                 <Popup>
-                  <div>
+                  <div className="p-1">
                     <h3 className="font-bold">{location.name}</h3>
                     <p>{location.description}</p>
                   </div>
@@ -209,7 +289,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                   <CardHeader className="p-3 pb-0">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <MapPin
-                        className={`h-4 w-4 text-${getMarkerColor(location.type) === "blue" ? "blue" : getMarkerColor(location.type) === "green" ? "green" : getMarkerColor(location.type) === "orange" ? "orange" : "red"}-500`}
+                        className={`h-4 w-4 text-${getMarkerColor(location.type)}-500`}
                       />
                       {location.name}
                     </CardTitle>

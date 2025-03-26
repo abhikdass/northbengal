@@ -1,18 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-  Search,
-  Map,
-  Calendar,
-  AlertCircle,
-  Info,
-  User,
-  Menu,
-  X,
-  LogIn,
-} from "lucide-react";
+import { Map, Calendar, AlertCircle, Info, Menu, X, LogIn } from "lucide-react";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
 import { cn } from "@/lib/utils";
 
 interface NavbarProps {
@@ -21,7 +10,6 @@ interface NavbarProps {
 
 const Navbar = ({ className }: NavbarProps = {}) => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const location = useLocation();
 
   // Don't show navbar on login and register pages
@@ -45,26 +33,14 @@ const Navbar = ({ className }: NavbarProps = {}) => {
         <div className="flex items-center">
           <Link to="/" className="flex items-center">
             <img
-              src="/vite.svg"
+              src="/logo.svg"
               alt="North Bengal Travel Guide"
-              className="h-8 w-8 mr-2"
+              className="h-8 w-auto mr-2"
             />
             <span className="font-bold text-lg hidden md:block">
               North Bengal Travel
             </span>
           </Link>
-        </div>
-
-        {/* Search Bar - Hidden on Mobile */}
-        <div className="hidden md:flex items-center max-w-md w-full mx-4">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              type="text"
-              placeholder="Search destinations, attractions..."
-              className="pl-10 w-full rounded-full bg-gray-50 border-gray-200"
-            />
-          </div>
         </div>
 
         {/* Desktop Navigation Links */}
@@ -89,19 +65,11 @@ const Navbar = ({ className }: NavbarProps = {}) => {
             icon={<Info className="h-4 w-4 mr-1" />}
             label="Insights"
           />
-          {isLoggedIn ? (
-            <NavLink
-              to="/profile"
-              icon={<User className="h-4 w-4 mr-1" />}
-              label="Profile"
-            />
-          ) : (
-            <NavLink
-              to="/login"
-              icon={<LogIn className="h-4 w-4 mr-1" />}
-              label="Login"
-            />
-          )}
+          <NavLink
+            to="/login"
+            icon={<LogIn className="h-4 w-4 mr-1" />}
+            label="Login"
+          />
         </div>
 
         {/* Mobile Menu Button */}
@@ -124,14 +92,6 @@ const Navbar = ({ className }: NavbarProps = {}) => {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden bg-white border-b border-gray-200 py-4 px-4">
-          <div className="flex items-center mb-4">
-            <Search className="text-gray-400 h-4 w-4 mr-2" />
-            <Input
-              type="text"
-              placeholder="Search..."
-              className="w-full bg-gray-50 border-gray-200"
-            />
-          </div>
           <div className="flex flex-col space-y-2">
             <MobileNavLink
               to="/map"
@@ -153,19 +113,11 @@ const Navbar = ({ className }: NavbarProps = {}) => {
               icon={<Info className="h-5 w-5 mr-3" />}
               label="Local Insights"
             />
-            {isLoggedIn ? (
-              <MobileNavLink
-                to="/profile"
-                icon={<User className="h-5 w-5 mr-3" />}
-                label="My Profile"
-              />
-            ) : (
-              <MobileNavLink
-                to="/login"
-                icon={<LogIn className="h-5 w-5 mr-3" />}
-                label="Login / Register"
-              />
-            )}
+            <MobileNavLink
+              to="/login"
+              icon={<LogIn className="h-5 w-5 mr-3" />}
+              label="Login / Register"
+            />
           </div>
         </div>
       )}

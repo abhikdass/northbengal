@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   MapPin,
   Calendar,
@@ -12,6 +12,12 @@ import {
   Compass,
   DollarSign,
   Info,
+  Download,
+  Share2,
+  Edit,
+  Loader2,
+  Check,
+  Copy,
 } from "lucide-react";
 import {
   Card,
@@ -23,6 +29,15 @@ import {
 } from "../ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { Button } from "../ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "../ui/dialog";
+import { Input } from "../ui/input";
 
 interface Activity {
   time: string;
@@ -44,6 +59,9 @@ interface ItineraryDisplayProps {
   description?: string;
   days?: DayPlan[];
   totalCost?: number;
+  destination?: string;
+  startDate?: string;
+  id?: string;
   onEdit?: () => void;
   onDownload?: () => void;
   onShare?: () => void;
@@ -210,10 +228,160 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({
     },
   ],
   totalCost = 15000,
+  destination = "North Bengal",
+  startDate = new Date().toISOString(),
+  id = `itinerary-${Date.now()}`,
   onEdit = () => console.log("Edit itinerary"),
   onDownload = () => console.log("Download itinerary"),
   onShare = () => console.log("Share itinerary"),
 }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Handle download PDF
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      // First try to download from API
+      try {
+        const response = await fetch(
+          `https://api.northbengaltravel.com/api/itineraries/${id}/pdf`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            },
+          },
+        );
+
+        if (response.ok) {
+          // Get the PDF blob from the response
+          const pdfBlob = await response.blob();
+
+          // Create a download link and trigger download
+          const url = window.URL.createObjectURL(pdfBlob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${title.replace(/\s+/g, "_")}_Itinerary.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+
+          console.log("Downloaded PDF from API");
+          return;
+        } else {
+          console.warn(
+            "API PDF download failed, falling back to client-side generation",
+          );
+        }
+      } catch (apiError) {
+        console.error("API PDF download error:", apiError);
+      }
+
+      // Fallback to client-side generation
+      const { generateItineraryPDF } = await import("@/lib/pdfGenerator");
+
+      // Create the itinerary object with all required properties
+      const itinerary = {
+        id,
+        title,
+        description,
+        days,
+        totalCost,
+        destination,
+        startDate,
+        duration: days.length,
+      };
+
+      // Generate and download the PDF
+      generateItineraryPDF(itinerary);
+      console.log("Generated PDF client-side as fallback");
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      alert("Failed to download PDF. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // Handle share
+  const handleShare = async () => {
+    setIsSharing(true);
+    try {
+      // First try to get a share link from the API
+      try {
+        const response = await fetch(
+          `https://api.northbengaltravel.com/api/itineraries/${id}/share`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            },
+            body: JSON.stringify({
+              title,
+              description,
+              destination,
+              duration: days.length,
+              startDate,
+            }),
+          },
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setShareUrl(data.shareUrl);
+          setShareDialogOpen(true);
+          console.log("Generated share link from API");
+          setIsSharing(false);
+          return;
+        } else {
+          console.warn(
+            "API share link generation failed, falling back to client-side",
+          );
+        }
+      } catch (apiError) {
+        console.error("API share error:", apiError);
+      }
+
+      // Fallback to client-side generation
+      const { generateShareableLink } = await import("@/lib/pdfGenerator");
+
+      // Create the itinerary object with all required properties
+      const itinerary = {
+        id,
+        title,
+        description,
+        days,
+        totalCost,
+        destination,
+        startDate,
+        duration: days.length,
+      };
+
+      // Generate a shareable link
+      const link = await generateShareableLink(itinerary);
+      setShareUrl(link);
+      setShareDialogOpen(true);
+      console.log("Generated share link client-side as fallback");
+    } catch (error) {
+      console.error("Error generating share link:", error);
+      alert("Failed to generate share link. Please try again.");
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  // Handle copy link
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="bg-gray-50 p-6 rounded-xl">
       <div className="mb-6">
@@ -234,13 +402,39 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({
 
       <div className="mb-6 flex flex-wrap gap-3">
         <Button onClick={onEdit} variant="outline" className="gap-2">
-          <Compass className="h-4 w-4" /> Edit Itinerary
+          <Edit className="h-4 w-4" /> Edit Itinerary
         </Button>
-        <Button onClick={onDownload} variant="outline" className="gap-2">
-          <Clock className="h-4 w-4" /> Download PDF
+        <Button
+          onClick={handleDownload}
+          variant="outline"
+          className="gap-2"
+          disabled={isDownloading}
+        >
+          {isDownloading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Downloading...
+            </>
+          ) : (
+            <>
+              <Download className="h-4 w-4" /> Download PDF
+            </>
+          )}
         </Button>
-        <Button onClick={onShare} variant="outline" className="gap-2">
-          <Clock className="h-4 w-4" /> Share
+        <Button
+          onClick={handleShare}
+          variant="outline"
+          className="gap-2"
+          disabled={isSharing}
+        >
+          {isSharing ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Sharing...
+            </>
+          ) : (
+            <>
+              <Share2 className="h-4 w-4" /> Share
+            </>
+          )}
         </Button>
       </div>
 
@@ -316,6 +510,35 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Share Dialog */}
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share Itinerary</DialogTitle>
+            <DialogDescription>
+              Share this link with others to view your itinerary.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center space-x-2 mt-4">
+            <Input value={shareUrl} readOnly className="flex-1" />
+            <Button size="sm" onClick={copyToClipboard}>
+              {copied ? (
+                <>
+                  <Check className="mr-2 h-4 w-4" /> Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="mr-2 h-4 w-4" /> Copy
+                </>
+              )}
+            </Button>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button onClick={() => setShareDialogOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

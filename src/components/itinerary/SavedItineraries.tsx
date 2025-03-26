@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -41,56 +41,7 @@ interface SavedItinerariesProps {
 }
 
 const SavedItineraries = ({
-  itineraries = [
-    {
-      id: "1",
-      title: "Darjeeling Tea Gardens Tour",
-      destination: "Darjeeling",
-      duration: 3,
-      startDate: "2023-06-15",
-      budget: "₹15,000",
-      interests: ["Tea Gardens", "Mountain Views", "Cultural"],
-      thumbnail:
-        "https://images.unsplash.com/photo-1544233726-9f1d0a91fd31?w=800&q=80",
-      createdAt: "2023-05-10",
-    },
-    {
-      id: "2",
-      title: "Kalimpong Heritage Trail",
-      destination: "Kalimpong",
-      duration: 4,
-      startDate: "2023-07-22",
-      budget: "₹18,000",
-      interests: ["Heritage", "Hiking", "Local Cuisine"],
-      thumbnail:
-        "https://images.unsplash.com/photo-1544006659-f0b21884ce1d?w=800&q=80",
-      createdAt: "2023-06-05",
-    },
-    {
-      id: "3",
-      title: "Dooars Wildlife Adventure",
-      destination: "Dooars",
-      duration: 5,
-      startDate: "2023-09-10",
-      budget: "₹25,000",
-      interests: ["Wildlife", "Safari", "Nature"],
-      thumbnail:
-        "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=800&q=80",
-      createdAt: "2023-08-01",
-    },
-    {
-      id: "4",
-      title: "Siliguri City Exploration",
-      destination: "Siliguri",
-      duration: 2,
-      startDate: "2023-10-05",
-      budget: "₹8,000",
-      interests: ["Urban", "Shopping", "Food"],
-      thumbnail:
-        "https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=800&q=80",
-      createdAt: "2023-09-15",
-    },
-  ],
+  itineraries: propItineraries,
   onEdit = () => {},
   onDelete = () => {},
   onView = () => {},
@@ -98,6 +49,237 @@ const SavedItineraries = ({
 }: SavedItinerariesProps) => {
   const [viewItinerary, setViewItinerary] = useState<Itinerary | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [itineraries, setItineraries] = useState<Itinerary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load saved itineraries from backend API with fallback to IndexedDB on component mount
+  useEffect(() => {
+    const loadSavedItineraries = async () => {
+      try {
+        // First try to fetch from API
+        try {
+          const response = await fetch(
+            "https://api.northbengaltravel.com/api/itineraries",
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+              },
+            },
+          );
+
+          if (response.ok) {
+            const apiItineraries = await response.json();
+            console.log("Fetched itineraries from API:", apiItineraries);
+
+            // Format the API itineraries
+            const formattedApiItineraries = apiItineraries.map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              destination: item.destination,
+              duration: item.duration,
+              startDate: item.startDate,
+              budget:
+                typeof item.totalCost === "number"
+                  ? `₹${item.totalCost}`
+                  : item.budget || "₹0",
+              interests: Array.isArray(item.tags) ? item.tags : [],
+              thumbnail:
+                item.thumbnail ||
+                `https://images.unsplash.com/photo-${Math.floor(Math.random() * 10000000)}?w=800&q=80`,
+              createdAt:
+                item.savedAt || item.createdAt || new Date().toISOString(),
+            }));
+
+            setItineraries(formattedApiItineraries);
+            setIsLoading(false);
+
+            // Sync with IndexedDB for offline access
+            const { saveItinerary } = await import("@/lib/indexdb");
+            for (const itinerary of apiItineraries) {
+              await saveItinerary(itinerary);
+            }
+
+            return;
+          } else {
+            console.warn("API request failed, falling back to IndexedDB");
+          }
+        } catch (apiError) {
+          console.error("API error, using IndexedDB fallback:", apiError);
+        }
+
+        // Import the IndexedDB utility dynamically
+        const { getAllItineraries, migrateFromLocalStorage } = await import(
+          "@/lib/indexdb"
+        );
+
+        // First attempt to migrate any data from localStorage to IndexedDB
+        await migrateFromLocalStorage();
+
+        // Then fetch all itineraries from IndexedDB
+        const dbItineraries = await getAllItineraries();
+
+        if (dbItineraries && dbItineraries.length > 0) {
+          // Format the itineraries to match the Itinerary interface
+          const formattedItineraries = dbItineraries.map((item: any) => ({
+            id:
+              item.id ||
+              `itinerary-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            title: item.title,
+            destination: item.destination,
+            duration: item.duration,
+            startDate: item.startDate,
+            budget:
+              typeof item.totalCost === "number"
+                ? `₹${item.totalCost}`
+                : item.budget || "₹0",
+            interests: Array.isArray(item.tags)
+              ? item.tags
+              : Array.isArray(item.preferences?.interests)
+                ? item.preferences.interests
+                : [],
+            thumbnail:
+              item.thumbnail ||
+              `https://images.unsplash.com/photo-${Math.floor(Math.random() * 10000000)}?w=800&q=80`,
+            createdAt:
+              item.savedAt || item.createdAt || new Date().toISOString(),
+          }));
+          setItineraries(formattedItineraries);
+        } else if (propItineraries && propItineraries.length > 0) {
+          // Use prop itineraries if available
+          setItineraries(propItineraries);
+        } else {
+          // Fallback to localStorage if IndexedDB is empty
+          const storedItineraries = localStorage.getItem("savedItineraries");
+          if (storedItineraries) {
+            const parsedItineraries = JSON.parse(storedItineraries).map(
+              (item: any) => ({
+                id:
+                  item.id ||
+                  `itinerary-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                title: item.title,
+                destination: item.destination,
+                duration: item.duration,
+                startDate: item.startDate,
+                budget:
+                  typeof item.totalCost === "number"
+                    ? `₹${item.totalCost}`
+                    : item.budget || "₹0",
+                interests: Array.isArray(item.tags)
+                  ? item.tags
+                  : Array.isArray(item.preferences?.interests)
+                    ? item.preferences.interests
+                    : [],
+                thumbnail:
+                  item.thumbnail ||
+                  `https://images.unsplash.com/photo-${Math.floor(Math.random() * 10000000)}?w=800&q=80`,
+                createdAt:
+                  item.savedAt || item.createdAt || new Date().toISOString(),
+              }),
+            );
+            setItineraries(parsedItineraries);
+          } else {
+            // Use default mock data if no stored or prop itineraries
+            setItineraries([
+              {
+                id: "1",
+                title: "Darjeeling Tea Gardens Tour",
+                destination: "Darjeeling",
+                duration: 3,
+                startDate: "2023-06-15",
+                budget: "₹15,000",
+                interests: ["Tea Gardens", "Mountain Views", "Cultural"],
+                thumbnail:
+                  "https://images.unsplash.com/photo-1544233726-9f1d0a91fd31?w=800&q=80",
+                createdAt: "2023-05-10",
+              },
+              {
+                id: "2",
+                title: "Kalimpong Heritage Trail",
+                destination: "Kalimpong",
+                duration: 4,
+                startDate: "2023-07-22",
+                budget: "₹18,000",
+                interests: ["Heritage", "Hiking", "Local Cuisine"],
+                thumbnail:
+                  "https://images.unsplash.com/photo-1544006659-f0b21884ce1d?w=800&q=80",
+                createdAt: "2023-06-05",
+              },
+              {
+                id: "3",
+                title: "Dooars Wildlife Adventure",
+                destination: "Dooars",
+                duration: 5,
+                startDate: "2023-09-10",
+                budget: "₹25,000",
+                interests: ["Wildlife", "Safari", "Nature"],
+                thumbnail:
+                  "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=800&q=80",
+                createdAt: "2023-08-01",
+              },
+              {
+                id: "4",
+                title: "Siliguri City Exploration",
+                destination: "Siliguri",
+                duration: 2,
+                startDate: "2023-10-05",
+                budget: "₹8,000",
+                interests: ["Urban", "Shopping", "Food"],
+                thumbnail:
+                  "https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=800&q=80",
+                createdAt: "2023-09-15",
+              },
+            ]);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading saved itineraries:", error);
+        // Fallback to default itineraries on error
+        setItineraries(propItineraries || []);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSavedItineraries();
+  }, [propItineraries]);
+
+  // Handle delete itinerary
+  const handleDeleteItinerary = async (id: string) => {
+    try {
+      // Update local state
+      const updatedItineraries = itineraries.filter(
+        (itinerary) => itinerary.id !== id,
+      );
+      setItineraries(updatedItineraries);
+      setDeleteConfirmId(null);
+
+      // Delete from IndexedDB
+      try {
+        const { deleteItinerary } = await import("@/lib/indexdb");
+        await deleteItinerary(id);
+      } catch (dbError) {
+        console.error("Error deleting from IndexedDB:", dbError);
+
+        // Fallback to localStorage if IndexedDB fails
+        const storedItineraries = localStorage.getItem("savedItineraries");
+        if (storedItineraries) {
+          const parsedStored = JSON.parse(storedItineraries);
+          const updatedStored = parsedStored.filter(
+            (item: any) => item.id !== id,
+          );
+          localStorage.setItem(
+            "savedItineraries",
+            JSON.stringify(updatedStored),
+          );
+        }
+      }
+
+      // Call the provided onDelete callback
+      onDelete(id);
+    } catch (error) {
+      console.error("Error deleting itinerary:", error);
+    }
+  };
 
   // Mock itinerary display data when viewing an itinerary
   const renderItineraryDetails = (itinerary: Itinerary) => {
@@ -182,6 +364,14 @@ const SavedItineraries = ({
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="w-full bg-white p-6 rounded-lg shadow-sm flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full bg-white p-6 rounded-lg shadow-sm">
       <Tabs defaultValue="all" className="w-full">
@@ -198,16 +388,27 @@ const SavedItineraries = ({
 
         <TabsContent value="all" className="mt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {itineraries.map((itinerary) => (
-              <ItineraryCard
-                key={itinerary.id}
-                itinerary={itinerary}
-                onEdit={onEdit}
-                onDelete={() => setDeleteConfirmId(itinerary.id)}
-                onView={() => setViewItinerary(itinerary)}
-                onDownload={onDownload}
-              />
-            ))}
+            {itineraries.length === 0 ? (
+              <div className="col-span-full text-center py-12 bg-gray-50 rounded-lg">
+                <p className="text-gray-500">
+                  You haven't saved any itineraries yet.
+                </p>
+                <p className="text-gray-500 mt-1">
+                  Create a new itinerary to get started!
+                </p>
+              </div>
+            ) : (
+              itineraries.map((itinerary) => (
+                <ItineraryCard
+                  key={itinerary.id}
+                  itinerary={itinerary}
+                  onEdit={onEdit}
+                  onDelete={() => setDeleteConfirmId(itinerary.id)}
+                  onView={() => setViewItinerary(itinerary)}
+                  onDownload={onDownload}
+                />
+              ))
+            )}
           </div>
         </TabsContent>
 
@@ -299,8 +500,7 @@ const SavedItineraries = ({
               variant="destructive"
               onClick={() => {
                 if (deleteConfirmId) {
-                  onDelete(deleteConfirmId);
-                  setDeleteConfirmId(null);
+                  handleDeleteItinerary(deleteConfirmId);
                 }
               }}
             >

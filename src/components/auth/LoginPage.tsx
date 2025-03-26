@@ -14,8 +14,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Lock, Mail } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -24,7 +23,6 @@ const formSchema = z.object({
   password: z.string().min(6, {
     message: "Password must be at least 6 characters.",
   }),
-  rememberMe: z.boolean().optional(),
 });
 
 const LoginPage = () => {
@@ -34,7 +32,6 @@ const LoginPage = () => {
     defaultValues: {
       email: "",
       password: "",
-      rememberMe: false,
     },
   });
 
@@ -46,133 +43,80 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-block">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <Link to="/" className="inline-block mb-4">
             <img
-              src="/vite.svg"
+              src="/logo.svg"
               alt="North Bengal Travel Guide"
               className="h-12 w-12 mx-auto"
             />
           </Link>
-          <h1 className="mt-4 text-3xl font-bold text-gray-900">
-            Welcome Back
-          </h1>
-          <p className="mt-2 text-gray-600">
-            Sign in to your North Bengal Travel Guide account
-          </p>
-        </div>
+          <CardTitle className="text-2xl">Sign In</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <Mail className="h-4 w-4 inline mr-2" /> Email
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="your.email@example.com"
+                        {...field}
+                        type="email"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        <Card className="bg-white shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-xl">Sign In</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
-              >
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Mail className="h-4 w-4" /> Email
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="your.email@example.com"
-                          {...field}
-                          type="email"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <Lock className="h-4 w-4 inline mr-2" /> Password
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="••••••••"
+                        type="password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Lock className="h-4 w-4" /> Password
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="••••••••"
-                          type="password"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <Button type="submit" className="w-full mt-2">
+                Sign In
+              </Button>
 
-                <div className="flex items-center justify-between">
-                  <FormField
-                    control={form.control}
-                    name="rememberMe"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormLabel className="text-sm font-normal cursor-pointer">
-                          Remember me
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
+              <div className="text-center mt-4">
+                <p className="text-sm text-gray-600">
+                  Don't have an account?{" "}
                   <Link
-                    to="/forgot-password"
-                    className="text-sm text-blue-600 hover:text-blue-800"
+                    to="/register"
+                    className="text-blue-600 hover:text-blue-800"
                   >
-                    Forgot password?
+                    Sign up
                   </Link>
-                </div>
-
-                <Button type="submit" className="w-full">
-                  Sign In
-                </Button>
-
-                <div className="text-center mt-4">
-                  <p className="text-sm text-gray-600">
-                    Don't have an account?{" "}
-                    <Link
-                      to="/register"
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      Sign up
-                    </Link>
-                  </p>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-
-        <div className="mt-6 text-center">
-          <p className="text-xs text-gray-500">
-            By signing in, you agree to our{" "}
-            <a href="#" className="text-blue-600 hover:text-blue-800">
-              Terms of Service
-            </a>{" "}
-            and{" "}
-            <a href="#" className="text-blue-600 hover:text-blue-800">
-              Privacy Policy
-            </a>
-          </p>
-        </div>
-      </div>
+                </p>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

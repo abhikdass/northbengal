@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { useForm } from "react-hook-form";
 import {
   Form,
   FormControl,
@@ -141,20 +141,85 @@ const SaveItineraryPage: React.FC<SaveItineraryPageProps> = ({
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSaving(true);
-    // In a real app, this would call an API to save the itinerary
-    console.log("Saving itinerary:", { ...itinerary, ...values });
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Prepare the data to save
+      const itineraryToSave = {
+        ...itinerary,
+        ...values,
+        savedAt: new Date().toISOString(),
+        id: `itinerary-${Date.now()}`, // Generate a unique ID
+        tags: values.tags
+          ? values.tags.split(",").map((tag) => tag.trim())
+          : [],
+      };
+
+      // Save to backend API
+      const response = await fetch(
+        "https://api.northbengaltravel.com/api/itineraries",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`, // Assuming auth token is stored in localStorage
+          },
+          body: JSON.stringify(itineraryToSave),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to save itinerary: ${response.statusText}`);
+      }
+
+      const savedData = await response.json();
+      console.log("Itinerary saved to backend:", savedData);
+
+      // Also save to IndexedDB for offline access
+      const { saveItinerary } = await import("@/lib/indexdb");
+      await saveItinerary(itineraryToSave);
+
+      // Also save to localStorage as a fallback
+      try {
+        const existingItineraries = JSON.parse(
+          localStorage.getItem("savedItineraries") || "[]",
+        );
+        const updatedItineraries = [...existingItineraries, itineraryToSave];
+        localStorage.setItem(
+          "savedItineraries",
+          JSON.stringify(updatedItineraries),
+        );
+      } catch (localStorageError) {
+        console.warn("Could not save to localStorage:", localStorageError);
+      }
+
+      console.log("Itinerary saved locally:", itineraryToSave);
+
+      // Update UI state
       setIsSaving(false);
       setSavedSuccess(true);
+
       // After a brief delay, navigate back to the itineraries page
       setTimeout(() => {
         navigate("/itinerary");
       }, 1500);
-    }, 1000);
+    } catch (error) {
+      console.error("Error saving itinerary:", error);
+      setIsSaving(false);
+      // Fall back to local storage only if API fails
+      try {
+        const { saveItinerary } = await import("@/lib/indexdb");
+        await saveItinerary(itineraryToSave);
+        setSavedSuccess(true);
+        setTimeout(() => {
+          navigate("/itinerary");
+        }, 1500);
+      } catch (fallbackError) {
+        console.error("Fallback save also failed:", fallbackError);
+        alert("Failed to save itinerary. Please try again later.");
+      }
+    }
   };
 
   // Calculate total activities

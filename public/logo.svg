@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="80" viewBox="0 0 200 80">
+  <text x="0" y="40" font-family="Arial" font-weight="bold" font-size="40" fill="#004d66">
+    tr<tspan fill="#ff6600">a</tspan>vel
+  </text>
+  <path d="M100 20 L110 35 L90 35 Z" fill="#ff6600" />
+  <circle cx="100" cy="30" r="5" fill="#ff6600" />
+</svg>
